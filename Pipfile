@@ -9,6 +9,8 @@ python-dotenv = "*"
 pytz = "*"
 requests = "*"
 google-api-python-client = "*"
+pymongo = "*"
+dnspython = "*"
 
 [dev-packages]
 
