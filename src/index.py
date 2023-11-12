@@ -5,8 +5,7 @@ import datetime
 import pytz
 from dotenv import load_dotenv
 import os
-import  requests
-import re
+import asyncio
 
 
 
@@ -26,6 +25,22 @@ bot= commands.Bot(command_prefix='>', description="Esto es un bot de ayuda", int
 @bot.command()
 async def ping(ctx):
     await ctx.send('pong')
+
+
+@bot.command()
+async def ayuda(ctx):
+    ayuda_msg = """
+    Hola! Soy tu bot de Discord. Aquí están las cosas que puedo hacer:
+
+    1. **Buscar canciones de YouTube**: Usa `>youtube <nombre de la canción>` para buscar una canción en YouTube.
+    2. **Operaciones matemáticas**: Puedo sumar, restar, multiplicar y dividir;
+        Usa `>sum <número 1> <número 2>` para sumar dos números, y así para >div , >mult , >resto, >resta
+    3. **Saludar**: Usa `>saludo` y te devolveré un saludo!
+    4. **info**: Usa '>info' y te devolvere informacion y hora del servidor.
+    Si tienes alguna otra pregunta, no dudes en preguntar!
+    """
+    await ctx.send(ayuda_msg)
+
 
 
 
@@ -92,16 +107,43 @@ async def on_ready():
 async def youtube(ctx, *, search):
     request = youtube_api.search().list(
         part="snippet",
-        maxResults=1,
-        q=search
+        maxResults=5,
+        q=search,
+        type="video"  # Asegúrate de buscar solo videos
     )
     response = request.execute()
 
     if response['items']:
-        video_id = response['items'][0]['id']['videoId']
+        options = []
+        for i, item in enumerate(response['items']):
+            if item['id']['kind'] == "youtube#video":  # Verifica que sea un video
+                video_id = item['id']['videoId']
+                title = item['snippet']['title']
+                options.append(f"{i + 1}: {title}")
+
+        if not options:
+            await ctx.send('No se encontraron videos para tu búsqueda.')
+            return
+
+        options_message = "\n".join(options)
+        await ctx.send("Elije un video:\n" + options_message)
+
+        def check(m):
+            return m.author == ctx.author and m.content.isdigit() and 0 < int(m.content) <= len(options)
+
+        try:
+            choice = await bot.wait_for('message', check=check, timeout=30.0)
+        except asyncio.TimeoutError:
+            await ctx.send('No se recibió respuesta, cancelando operación.')
+            return
+
+        selected = int(choice.content) - 1
+        video_id = response['items'][selected]['id']['videoId']
         await ctx.send('https://www.youtube.com/watch?v=' + video_id)
     else:
         await ctx.send('No se encontraron videos para tu búsqueda.')
+
+
 
 
 
