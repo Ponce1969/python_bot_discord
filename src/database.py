@@ -2,7 +2,7 @@ import pymongo, os
 from dotenv import load_dotenv
 
 
-load_dotoenv()
+load_dotenv()
 db_uri = os.getenv("DB_URI")
 
 def db_connect():
