@@ -5,13 +5,14 @@ from dotenv import load_dotenv
 load_dotenv()
 db_uri = os.getenv("DB_URI")
 
+
 def db_connect():
     connection = pymongo.MongoClient(db_uri)
     return connection
 
 def register(conn, ctx):
     database = conn["discord_server"]
-    collection = database["user"]
+    collection = database["users"]
     doc= {"discordID" : str(ctx.author.id), "userName": str(ctx.author)}
     collection.insert_one(doc)
 

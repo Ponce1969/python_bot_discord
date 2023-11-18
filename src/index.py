@@ -6,6 +6,7 @@ import pytz
 from dotenv import load_dotenv
 import os
 import asyncio
+import database
 
 
 
@@ -16,11 +17,40 @@ token = os.getenv('DISCORD_TOKEN')
 # Configura tu clave API aquí
 youtube_api_key = os.getenv('YOUTUBE_API_KEY')
 
+
+
 youtube_api = build('youtube', 'v3', developerKey=youtube_api_key)
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot= commands.Bot(command_prefix='>', description="Esto es un bot de ayuda", intents=intents)
+
+# Declaración global de connection al principio del script
+global connection
+connection = None
+
+
+# Evento on_ready combinado
+@bot.event
+async def on_ready():
+    global connection
+    connection = database.db_connect()
+    await bot.change_presence(activity=discord.Streaming(name="Tutorial de Mouredev", url="http://www.twitch.tv/mouredev/videos"))
+    print("Bot is ready")
+    print("Mi Bot esta en linea")
+
+
+# Comando register
+@bot.command(help="registrate en la database")
+async def register(ctx):
+    global connection  # Usa la variable global
+    flag = database.verify_id(connection, str(ctx.author.id))
+    if flag:
+        await ctx.send("Usted se encuentra registrado en la base de datos")
+    else:
+        database.register(connection, ctx)
+        await ctx.send("Te has registrado correctamente en la base de datos")
+
 
 @bot.command()
 async def ping(ctx):
@@ -93,15 +123,6 @@ async def resto(ctx, numero_uno: int, numero_dos: int):
     await ctx.send(numero_uno % numero_dos)
 
 
-
-#Eventos
-@bot.event
-async def on_ready():
-    await bot.change_presence(activity=discord.Streaming(name="Tutorial de Mouredev",
-    url="http://www.twitch.tv/mouredev/videos"))
-    print("Mi Bot esta en linea")
-
-
 # peticiones a youtube.
 @bot.command()
 async def youtube(ctx, *, search):
@@ -142,9 +163,6 @@ async def youtube(ctx, *, search):
         await ctx.send('https://www.youtube.com/watch?v=' + video_id)
     else:
         await ctx.send('No se encontraron videos para tu búsqueda.')
-
-
-
 
 
 
